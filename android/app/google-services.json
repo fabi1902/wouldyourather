@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "405250047492",
+    "project_id": "whowouldrather",
+    "storage_bucket": "whowouldrather.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:405250047492:android:b66bf1d63e1edebc7abf51",
+        "android_client_info": {
+          "package_name": "com.example.whowouldrather"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "405250047492-79k532edlk8m3ckvkc87m6dca0qqjnmj.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDBuyzR-XKLhRkxjx8-0QKuGii_bfkgV1o"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "405250047492-79k532edlk8m3ckvkc87m6dca0qqjnmj.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

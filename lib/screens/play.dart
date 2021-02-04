@@ -37,7 +37,7 @@ class _PlayState extends State<Play> {
                     bool gamerunning =
                         await dbs.startstopGame(spieler.raumcode);
                     if (gamerunning == true) {
-                      showDialogstopgame(context);
+                      //showDialogstopgame(context);
                     }
                   })
           ],

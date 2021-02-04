@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:whowouldrather/models/player.dart';
 import 'package:whowouldrather/services/database.dart';
+import 'package:whowouldrather/services/lokaldatabase.dart';
 import 'package:whowouldrather/shared/constants.dart';
 
 class Start extends StatefulWidget {
@@ -10,6 +12,7 @@ class Start extends StatefulWidget {
 
 class _StartState extends State<Start> {
   //Deklaration
+  bool superuser;
   String name = "";
   String raumcode = "";
   Player spieler = Player();
@@ -20,32 +23,45 @@ class _StartState extends State<Start> {
     return Scaffold(
       appBar: AppBar(
         title: Text('Who would rather?'),
-        backgroundColor: Colors.blueAccent,
+        backgroundColor: Colors.green,
         elevation: 0.0,
         actions: [
           IconButton(
               icon: Icon(Icons.settings),
-              onPressed: () {
+              onPressed: () async {
+                setTimer();
                 Navigator.pushNamed(context, '/usersettings');
               }),
         ],
       ),
       body: Container(
-        color: Colors.grey,
+        color: Colors.green[100],
         child: Center(
           child: Column(
             children: [
-              SizedBox(height: 5),
-              Text(
-                'Jetzt spielen!',
-                style: TextStyle(
-                  fontSize: 35,
-                  color: Colors.black,
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 10),
+                child: Card(
+                  elevation: 8,
+                  color: Colors.green[700],
+                  child: Padding(
+                    padding: const EdgeInsets.all(2.0),
+                    child: Container(
+                      padding: EdgeInsets.fromLTRB(25, 8, 25, 8),
+                      color: Colors.green,
+                      child: Text(
+                        'Spiel starten:',
+                        style: TextStyle(
+                          fontSize: 40,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                  ),
                 ),
               ),
-              SizedBox(height: 5),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10),
+                padding: const EdgeInsets.symmetric(horizontal: 30),
                 child: Form(
                   key: _formKey,
                   child: Column(children: [
@@ -78,7 +94,11 @@ class _StartState extends State<Start> {
                 padding: const EdgeInsets.all(10.0),
                 child: Row(
                   children: [
-                    RaisedButton.icon(
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(5, 5, 5, 5),
+                      child: RaisedButton.icon(
+                        elevation: 10,
+                        color: Colors.green[700],
                         onPressed: () async {
                           if (_formKey.currentState.validate()) {
                             await DatabaseService().createRoom(raumcode, name);
@@ -95,10 +115,21 @@ class _StartState extends State<Start> {
                             }
                           }
                         },
-                        icon: Icon(Icons.add),
-                        label: Text('Raum erstellen!')),
-                    SizedBox(width: 5.0),
-                    RaisedButton.icon(
+                        icon: Icon(Icons.add, color: Colors.green[100]),
+                        label: Padding(
+                          padding: const EdgeInsets.fromLTRB(0, 15, 0, 15),
+                          child: Text(
+                            'Raum erstellen!',
+                            style: TextStyle(color: Colors.green[100]),
+                          ),
+                        ),
+                      ),
+                    ),
+                    Padding(
+                      padding: const EdgeInsets.fromLTRB(5, 5, 5, 5),
+                      child: RaisedButton.icon(
+                        elevation: 10,
+                        color: Colors.green[700],
                         onPressed: () async {
                           if (_formKey.currentState.validate()) {
                             bool check = await DatabaseService()
@@ -135,9 +166,26 @@ class _StartState extends State<Start> {
                             }
                           }
                         },
-                        icon: Icon(Icons.check),
-                        label: Text('Raum beitreten!')),
+                        icon: Icon(Icons.check, color: Colors.green[100]),
+                        label: Padding(
+                          padding: const EdgeInsets.fromLTRB(0, 15, 0, 15),
+                          child: Text(
+                            'Raum beitreten!',
+                            style: TextStyle(color: Colors.green[100]),
+                          ),
+                        ),
+                      ),
+                    ),
                   ],
+                ),
+              ),
+              Hero(
+                tag: 'logo',
+                child: Container(
+                  //color: Colors.green[200],
+                  child: Image.asset('lib/assets/Wouldyourather.png',
+                      color: Colors.green[300]),
+                  height: 220.0,
                 ),
               ),
             ],
@@ -145,5 +193,28 @@ class _StartState extends State<Start> {
         ),
       ),
     );
+  }
+
+  void setTimer() async {
+    //Lokal User anlegen
+    SharedPreferences db = await SharedPreferences.getInstance();
+    db.getInt('timer') ?? db.setInt('timer', 30);
+  }
+
+  @override
+  void initState() {
+    // Check Superuser
+    Lokaldb().getSuperUser().then((bool superuser) {
+      if (superuser) {
+        setState(() {
+          this.superuser = true;
+        });
+      } else {
+        setState(() {
+          this.superuser = false;
+        });
+      }
+    });
+    super.initState();
   }
 }

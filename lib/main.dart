@@ -2,7 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:whowouldrather/screens/play.dart';
 import 'package:whowouldrather/screens/start.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:whowouldrather/screens/startloading.dart';
 import 'package:whowouldrather/screens/usersettings.dart';
+
+import 'screens/superuser.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -35,9 +38,11 @@ class MyApp extends StatelessWidget {
       ),
       initialRoute: '/',
       routes: {
-        "/": (context) => Start(),
+        "/": (context) => StartLoading(),
+        "/start": (context) => Start(),
         "/play": (context) => Play(),
         "/usersettings": (context) => Usersettings(),
+        "/superuser": (context) => SuperUser(),
       },
     );
   }

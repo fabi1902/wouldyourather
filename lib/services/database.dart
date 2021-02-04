@@ -1,5 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:whowouldrather/models/player.dart';
+import 'package:whowouldrather/services/lokaldatabase.dart';
 import 'dart:math';
 
 import 'package:whowouldrather/services/questions.dart';
@@ -10,6 +11,10 @@ class DatabaseService {
   //Collection reference
   final CollectionReference roomCollection =
       FirebaseFirestore.instance.collection('/raum');
+  final CollectionReference questionCollection =
+      FirebaseFirestore.instance.collection('/questions');
+  final CollectionReference userquestionCollection =
+      FirebaseFirestore.instance.collection('/userquestions');
 
   //Create Raum und Player
   Future createRoom(String raumname, String player) async {
@@ -60,8 +65,8 @@ class DatabaseService {
         //Timer reinladen
         int timer = await _getTimer(raumcode);
         //Fragerunde neu starten!
-        int questionID =
-            1 + Random().nextInt(Questions().questionslist.length - 1);
+        int anzahlFragen = await _firebaseQuestionslength();
+        int questionID = 1 + Random().nextInt(anzahlFragen - 1);
         //Setzen von neuer Frage:
         roomCollection.doc(raumcode).update({
           'currentQuestion': questionID,
@@ -72,9 +77,15 @@ class DatabaseService {
           print('Timer:$timer');
           await Future.delayed(Duration(seconds: 1));
           //Firebase Timer ändern
-          roomCollection.doc(raumcode).update({
-            'timer': timer - 1,
-          });
+          try {
+            await roomCollection.doc(raumcode).update({
+              'timer': timer - 1,
+            });
+          } catch (e) {
+            print('Spiel wurde abgebrochen!');
+            timer = 0;
+          }
+
           //Timer minus 1
           timer--;
         } while (timer >= 1);
@@ -158,8 +169,17 @@ class DatabaseService {
   }
 
   //delete Room
-  void deleteRoom(String raumcode) {
-    roomCollection.doc(raumcode).delete();
+  void deleteRoom(String raumcode) async {
+    await roomCollection
+        .doc(raumcode)
+        .collection('Player')
+        .get()
+        .then((snapshot) {
+      for (DocumentSnapshot ds in snapshot.docs) {
+        ds.reference.delete();
+      }
+    });
+    await roomCollection.doc(raumcode).delete();
   }
 
   //delete temppoints
@@ -174,12 +194,16 @@ class DatabaseService {
   //Check Gamerunning stauts
   Future<bool> _checkGamerunning(String raumcode) async {
     bool check;
-    await roomCollection
-        .doc(raumcode)
-        .get()
-        .then((DocumentSnapshot timersnapshot) {
-      check = timersnapshot.data()['gamerunning'];
-    });
+    try {
+      await roomCollection
+          .doc(raumcode)
+          .get()
+          .then((DocumentSnapshot timersnapshot) {
+        check = timersnapshot.data()['gamerunning'];
+      });
+    } catch (e) {
+      check = false;
+    }
     return check;
   }
 
@@ -193,18 +217,9 @@ class DatabaseService {
   //Timer von Firebase auslesen bzw von Timersettings wieder übernehmen
   Future<int> _getTimer(String raumcode) async {
     int timer;
-    await roomCollection
-        .doc(raumcode)
-        .get()
-        .then((DocumentSnapshot timersnapshot) {
-      //Checken ob das SPiel zum ersten mal gestartet wird!
-      if (timersnapshot.data()['currentQuestion'] == 0) {
-        this.timersettings = timersnapshot.data()['timer'];
-        timer = timersnapshot.data()['timer'];
-      } else {
-        timer = this.timersettings;
-      }
-    });
+    // NEw Timer from Lokaldb
+    timer = await Lokaldb().getTimer();
+
     return timer;
   }
 
@@ -218,5 +233,66 @@ class DatabaseService {
         ds.reference.delete();
       }
     });
+  }
+
+  //Add User Question
+  bool addUserQuestion(String question) {
+    bool check;
+    try {
+      userquestionCollection.doc().set({'Frage': question});
+      check = true;
+    } catch (e) {
+      check = false;
+    }
+    return check;
+  }
+
+  //Delete UserQuestion
+  void deleteUserQuestion(String questionID) {
+    userquestionCollection.doc(questionID).delete();
+  }
+
+  //Add UserQuestion to the real Questions
+  void addUserQuestiontoQuestions(String question) async {
+    int anzahlFragen;
+    await questionCollection.get().then((value) async {
+      anzahlFragen = value.docs.length;
+      print('Es sind so viele Fragen: $anzahlFragen');
+      anzahlFragen = anzahlFragen + 1;
+      String anzahlFragenString = anzahlFragen.toString();
+      await questionCollection.doc(anzahlFragenString).set({
+        'Frage': question,
+      });
+    });
+  }
+
+  void loadInallQuestions() async {
+    List<String> questionlist;
+    questionlist = Questions().questionslist;
+
+    questionCollection
+        .get()
+        .then((value) => print('FirebaseAnzahl:${value.docs.length}'));
+
+    print('Lokale Anzahl:${questionlist.length}');
+
+    for (int questionID = 0; questionID <= questionlist.length; questionID++) {
+      print(questionID);
+      String questionIDString = questionID.toString();
+      await questionCollection.doc(questionIDString).set({
+        'Frage': questionlist[questionID],
+      });
+    }
+  }
+
+  Future<String> loadQuestionFromFirebase(String questionID) async {
+    DocumentSnapshot snapshot = await questionCollection.doc(questionID).get();
+    return snapshot.data()['Frage'];
+  }
+
+  Future<int> _firebaseQuestionslength() async {
+    int anzahl;
+    questionCollection.get().then((value) => anzahl = value.docs.length);
+    return anzahl;
   }
 }

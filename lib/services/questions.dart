@@ -10,7 +10,7 @@ class Questions {
     'Wer hat am meisten Klopapier gehamstert?',
     'Wer könnte am ehesten als Sternekoch arbeiten?',
     'Wer würde am ehesten beim Bachelor mitmachen?',
-    '10.   Und wer bei Prince Charming? (Gay Bachelor)',
+    'Und wer bei Prince Charming? (Gay Bachelor)',
     'Wer hätte am ehesten was mit dem eigenen Geschlecht?',
     'Wer hat als erstes einen Dreier?',
     'Wessen Kochkunst wird als erstes jemanden töten?',

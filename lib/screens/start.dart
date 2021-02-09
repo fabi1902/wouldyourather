@@ -28,8 +28,7 @@ class _StartState extends State<Start> {
         actions: [
           IconButton(
               icon: Icon(Icons.settings),
-              onPressed: () async {
-                setTimer();
+              onPressed: () {
                 Navigator.pushNamed(context, '/usersettings');
               }),
         ],
@@ -209,6 +208,12 @@ class _StartState extends State<Start> {
     db.getInt('timer') ?? db.setInt('timer', 30);
   }
 
+  void setPoints() async {
+    //Lokal User anlegen
+    SharedPreferences db = await SharedPreferences.getInstance();
+    db.getInt('pointstowin') ?? db.setInt('pointstowin', 50);
+  }
+
   @override
   void initState() {
     // Check Superuser
@@ -217,6 +222,10 @@ class _StartState extends State<Start> {
   }
 
   void onLoad() async {
+    //Set Timer
+    setTimer();
+    //Set Points
+    setPoints();
     // Check Superuser
     if (await Lokaldb().getSuperUserKey() ==
         await DatabaseService().getSuperUserKey()) {

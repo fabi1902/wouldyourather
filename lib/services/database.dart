@@ -5,6 +5,8 @@ import 'dart:math';
 
 class DatabaseService {
   int timersettings;
+  Player bestPlayer;
+  int pointsToWin;
 
   //Collection reference
   final CollectionReference roomCollection =
@@ -74,6 +76,8 @@ class DatabaseService {
 
     bool gamerunning = await _checkGamerunning(raumcode);
     int firebaseTimer = await _checkFirebaseTimer(raumcode);
+    int points = await _getPointstoWin();
+    this.pointsToWin = points;
 
     if (gamerunning == false && firebaseTimer == 0) {
       //Spiel starten!!!
@@ -84,7 +88,7 @@ class DatabaseService {
 
       do {
         //Timer reinladen
-        int timer = await _getTimer(raumcode);
+        int timer = await _getTimer();
         //Fragerunde neu starten!
         int anzahlFragen = await _firebaseQuestionslength();
         int questionID = 1 + Random().nextInt(anzahlFragen - 1);
@@ -110,11 +114,15 @@ class DatabaseService {
           //Timer minus 1
           timer--;
         } while (timer >= 1);
+        //Meiste Punkte reinladen
+        Player bestPlayer = await getMostPlayerPoints(raumcode);
+        this.bestPlayer = bestPlayer;
         //Alle Votes wieder löschen!
         _deleteVotes(raumcode);
         //Temppoints wieder löschen!
         _deletetemppoints(raumcode);
-      } while (await _checkGamerunning(raumcode) == true);
+      } while (await _checkGamerunning(raumcode) == true &&
+          this.bestPlayer.points < this.pointsToWin);
       //Spiel wieder beenden:
       print('Spiel zu ende');
     } else {
@@ -243,13 +251,21 @@ class DatabaseService {
     });
   }
 
-  //Timer von Firebase auslesen bzw von Timersettings wieder übernehmen
-  Future<int> _getTimer(String raumcode) async {
+  //Timer von Lokal auslesen bzw von Timersettings wieder übernehmen
+  Future<int> _getTimer() async {
     int timer;
     // NEw Timer from Lokaldb
     timer = await Lokaldb().getTimer();
 
     return timer;
+  }
+
+  //Points von Lokal auslesen bzw von Timersettings wieder übernehmen
+  Future<int> _getPointstoWin() async {
+    // NEw Timer from Lokaldb
+    int points = await Lokaldb().getPointstoWin();
+
+    return points;
   }
 
   void _deleteVotes(String raumcode) async {
@@ -383,5 +399,20 @@ class DatabaseService {
         roomCollection.doc(room.id).delete();
       }
     });
+  }
+
+  Future<Player> getMostPlayerPoints(String raumcode) async {
+    QuerySnapshot mostPoints = await FirebaseFirestore.instance
+        .collection('/raum')
+        .doc(raumcode)
+        .collection("Player")
+        .orderBy("points", descending: true)
+        .limit(1)
+        .get();
+    Player mostPointsPlayer = Player();
+    mostPointsPlayer.name = mostPoints.docs.first.id;
+    mostPointsPlayer.points = mostPoints.docs.first.data()['points'];
+    mostPointsPlayer.isHost = mostPoints.docs.first.data()['isHost'];
+    return mostPointsPlayer;
   }
 }

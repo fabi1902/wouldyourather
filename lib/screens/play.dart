@@ -17,6 +17,8 @@ class _PlayState extends State<Play> {
   final List<String> myquestions = Questions().questionslist;
   DatabaseService dbs = DatabaseService();
 
+  int pointstoWin;
+
   @override
   Widget build(BuildContext context) {
     Player spieler = ModalRoute.of(context).settings.arguments;
@@ -67,7 +69,9 @@ class _PlayState extends State<Play> {
                     //hier kommen die Fragen hin!
                     Padding(
                       padding: const EdgeInsets.fromLTRB(10, 10, 10, 0),
-                      child: CurrentQuestion(raumcode: spieler.raumcode),
+                      child: CurrentQuestion(
+                          raumcode: spieler.raumcode,
+                          pointstoWin: this.pointstoWin),
                     ),
                     ListofPlayers(
                       myplayername: spieler,
@@ -162,5 +166,15 @@ class _PlayState extends State<Play> {
         .then((playerdata) {
       return playerdata.data()['temppoints'];
     });
+  }
+
+  @override
+  void initState() {
+    onLoad();
+    super.initState();
+  }
+
+  void onLoad() async {
+    this.pointstoWin = await Lokaldb().getPointstoWin();
   }
 }

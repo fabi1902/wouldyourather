@@ -83,7 +83,7 @@ class _UsersettingsState extends State<Usersettings> {
                   ),
                   DropdownButton<int>(
                     value: points,
-                    icon: Icon(Icons.score),
+                    icon: Icon(Icons.videogame_asset),
                     iconSize: 25,
                     elevation: 16,
                     style: TextStyle(
@@ -92,10 +92,10 @@ class _UsersettingsState extends State<Usersettings> {
                         fontWeight: FontWeight.bold),
                     onChanged: (int newValue) {
                       setState(() {
-                        setNewTimer(newValue);
+                        setNewPointstoWin(newValue);
                       });
                     },
-                    items: <int>[30, 50, 100]
+                    items: <int>[1, 3, 10, 30, 50, 100]
                         .map<DropdownMenuItem<int>>((int value) {
                       return DropdownMenuItem<int>(
                         value: value,
@@ -197,6 +197,11 @@ class _UsersettingsState extends State<Usersettings> {
     Lokaldb().setTimer(newValue);
   }
 
+  void setNewPointstoWin(points) {
+    this.points = points;
+    Lokaldb().setPointstoWin(points);
+  }
+
   @override
   void initState() {
     onLoad();
@@ -215,8 +220,9 @@ class _UsersettingsState extends State<Usersettings> {
         this.superuser = false;
       });
     }
-
     //Check Timer
     Lokaldb().getTimer().then((value) => this.timer = value);
+    //Check Points
+    Lokaldb().getPointstoWin().then((value) => this.points = value);
   }
 }

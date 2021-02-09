@@ -14,6 +14,18 @@ class Lokaldb {
     db.setInt('timer', timer);
   }
 
+  //Set Points to win
+  void setPointstoWin(int points) async {
+    SharedPreferences db = await SharedPreferences.getInstance();
+    db.setInt('pointstowin', points);
+  }
+
+  //Set Points to win
+  Future<int> getPointstoWin() async {
+    SharedPreferences db = await SharedPreferences.getInstance();
+    return db.getInt('pointstowin');
+  }
+
   //Set Questionlist
   void setOwnQuestions(String question) async {
     SharedPreferences db = await SharedPreferences.getInstance();

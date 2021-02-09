@@ -6,6 +6,7 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:whowouldrather/screens/startloading.dart';
 import 'package:whowouldrather/screens/superuser_allquestions.dart';
 import 'package:whowouldrather/screens/usersettings.dart';
+import 'package:whowouldrather/screens/winnerscreen.dart';
 
 import 'screens/superuser.dart';
 
@@ -57,6 +58,7 @@ class MyApp extends StatelessWidget {
         "/usersettings": (context) => Usersettings(),
         "/superuser": (context) => SuperUser(),
         "/superuserallQuestions": (context) => SuperUserAllQuestions(),
+        "/winner": (context) => Winner(),
       },
     );
   }

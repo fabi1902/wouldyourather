@@ -61,6 +61,8 @@ flutter:
   assets:
     - lib/assets/Wouldyourather.png
     - lib/assets/Wouldyourather_logo.jpg
+    - lib/assets/Krone.gif
+
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/assets-and-images/#resolution-aware.

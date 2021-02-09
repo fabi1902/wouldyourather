@@ -14,17 +14,23 @@ class PlayerTile extends StatelessWidget {
     //Creating the Icon
     Icon iconforplayer;
     if (player.isHost == true && player.isHost != null) {
-      iconforplayer = Icon(Icons.account_box);
+      iconforplayer = Icon(
+        Icons.account_box,
+        color: Colors.white,
+      );
     } else {
-      iconforplayer = Icon(Icons.person);
+      iconforplayer = Icon(
+        Icons.person,
+        color: Colors.white,
+      );
     }
     return Padding(
       padding: EdgeInsets.only(top: 8),
       child: Card(
         margin: EdgeInsets.fromLTRB(20, 6, 20, 0),
         child: ListTile(
-          leading:
-              CircleAvatar(backgroundColor: Colors.grey, child: iconforplayer),
+          leading: CircleAvatar(
+              backgroundColor: Colors.green[700], child: iconforplayer),
           title: Text(player.name),
           trailing: Text('${player.points}'),
           subtitle: Text('+${player.temppoints}'),

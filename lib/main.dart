@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:page_transition/page_transition.dart';
 import 'package:whowouldrather/screens/play.dart';
 import 'package:whowouldrather/screens/start.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:whowouldrather/screens/startloading.dart';
+import 'package:whowouldrather/screens/superuser_allquestions.dart';
 import 'package:whowouldrather/screens/usersettings.dart';
 
 import 'screens/superuser.dart';
@@ -37,12 +39,24 @@ class MyApp extends StatelessWidget {
         visualDensity: VisualDensity.adaptivePlatformDensity,
       ),
       initialRoute: '/',
+      onGenerateRoute: (settings) {
+        switch (settings.name) {
+          case '/play':
+            return PageTransition(
+                child: Play(), type: PageTransitionType.scale);
+            break;
+          default:
+            return PageTransition(
+                child: Start(), type: PageTransitionType.scale);
+        }
+      },
       routes: {
         "/": (context) => StartLoading(),
         "/start": (context) => Start(),
         "/play": (context) => Play(),
         "/usersettings": (context) => Usersettings(),
         "/superuser": (context) => SuperUser(),
+        "/superuserallQuestions": (context) => SuperUserAllQuestions(),
       },
     );
   }

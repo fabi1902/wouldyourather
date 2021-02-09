@@ -93,25 +93,33 @@ class _StartState extends State<Start> {
               Padding(
                 padding: const EdgeInsets.all(10.0),
                 child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(5, 5, 5, 5),
+                      padding: const EdgeInsets.all(5),
                       child: RaisedButton.icon(
                         elevation: 10,
                         color: Colors.green[700],
                         onPressed: () async {
                           if (_formKey.currentState.validate()) {
-                            await DatabaseService().createRoom(raumcode, name);
-                            print('Raum erfolgreich erstellt!');
-                            spieler.name = name;
-                            spieler.points = 0;
-                            spieler.isHost = true;
-                            spieler.raumcode = raumcode;
-                            dynamic result = await Navigator.pushNamed(
-                                context, '/play',
-                                arguments: spieler);
-                            if (result == null) {
-                              DatabaseService().deleteRoom(raumcode);
+                            bool checkifRoomexists = await DatabaseService()
+                                .createRoom(raumcode, name);
+                            if (checkifRoomexists) {
+                              //Nur ein Host erlaubt
+                              _msgBoxRoomhasHost(context);
+                            } else {
+                              print('Raum erfolgreich erstellt!');
+                              spieler.isHost = true;
+                              spieler.name = name;
+                              spieler.points = 0;
+                              spieler.raumcode = raumcode;
+                              Lokaldb().setPlayer(spieler);
+                              dynamic result = await Navigator.pushNamed(
+                                  context, '/play',
+                                  arguments: spieler);
+                              if (result == null && spieler.isHost) {
+                                DatabaseService().deleteRoom(raumcode);
+                              }
                             }
                           }
                         },
@@ -126,7 +134,7 @@ class _StartState extends State<Start> {
                       ),
                     ),
                     Padding(
-                      padding: const EdgeInsets.fromLTRB(5, 5, 5, 5),
+                      padding: const EdgeInsets.all(5),
                       child: RaisedButton.icon(
                         elevation: 10,
                         color: Colors.green[700],
@@ -136,32 +144,16 @@ class _StartState extends State<Start> {
                                 .joinRoom(raumcode, name);
                             if (check == true && name != null) {
                               print('Raum erfolgreich beigetreten!');
+                              spieler.isHost = false;
                               spieler.name = name;
                               spieler.points = 0;
-                              spieler.isHost = false;
                               spieler.raumcode = raumcode;
+                              Lokaldb().setPlayer(spieler);
                               Navigator.pushNamed(context, '/play',
                                   arguments: spieler);
                             } else {
                               //FehlerMeldung anzeigen
-                              showDialog(
-                                  context: context,
-                                  builder: (BuildContext context) {
-                                    return AlertDialog(
-                                      title: Text("Fehler"),
-                                      content: Text(
-                                          'Der gesuchte Raum ist nicht verfügbar!'),
-                                      actions: <Widget>[
-                                        FlatButton(
-                                            child: Text('Okay'),
-                                            onPressed: () {
-                                              // Nur die MSGBox schliessen
-                                              Navigator.of(context).pop();
-                                            }),
-                                      ],
-                                    );
-                                  });
-
+                              _msgBoxRoomnotavailable(context);
                               print('Dieser Raum existiert nicht!');
                             }
                           }
@@ -179,20 +171,36 @@ class _StartState extends State<Start> {
                   ],
                 ),
               ),
-              Hero(
-                tag: 'logo',
-                child: Container(
-                  //color: Colors.green[200],
-                  child: Image.asset('lib/assets/Wouldyourather.png',
-                      color: Colors.green[300]),
-                  height: 220.0,
-                ),
+              Container(
+                //color: Colors.green[200],
+                child: Image.asset('lib/assets/Wouldyourather.png',
+                    color: Colors.green[300]),
+                height: 220.0,
               ),
             ],
           ),
         ),
       ),
     );
+  }
+
+  Future _msgBoxRoomnotavailable(BuildContext context) {
+    return showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text("Fehler"),
+            content: Text('Der gesuchte Raum ist nicht verfügbar!'),
+            actions: <Widget>[
+              FlatButton(
+                  child: Text('Okay'),
+                  onPressed: () {
+                    // Nur die MSGBox schliessen
+                    Navigator.of(context).pop();
+                  }),
+            ],
+          );
+        });
   }
 
   void setTimer() async {
@@ -204,17 +212,40 @@ class _StartState extends State<Start> {
   @override
   void initState() {
     // Check Superuser
-    Lokaldb().getSuperUser().then((bool superuser) {
-      if (superuser) {
-        setState(() {
-          this.superuser = true;
-        });
-      } else {
-        setState(() {
-          this.superuser = false;
-        });
-      }
-    });
+    onLoad();
     super.initState();
+  }
+
+  void onLoad() async {
+    // Check Superuser
+    if (await Lokaldb().getSuperUserKey() ==
+        await DatabaseService().getSuperUserKey()) {
+      setState(() {
+        this.superuser = true;
+      });
+    } else {
+      setState(() {
+        this.superuser = false;
+      });
+    }
+  }
+
+  Future _msgBoxRoomhasHost(BuildContext context) {
+    return showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text("Fehler"),
+            content: Text('Dieser Raum hat bereits einen Host'),
+            actions: <Widget>[
+              FlatButton(
+                  child: Text('Okay'),
+                  onPressed: () {
+                    // Nur die MSGBox schliessen
+                    Navigator.of(context).pop();
+                  }),
+            ],
+          );
+        });
   }
 }

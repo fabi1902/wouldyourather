@@ -11,6 +11,7 @@ class Usersettings extends StatefulWidget {
 class _UsersettingsState extends State<Usersettings> {
   TextEditingController _controller = TextEditingController();
   int timer;
+  int points;
   String question;
   bool superuser;
 
@@ -26,15 +27,19 @@ class _UsersettingsState extends State<Usersettings> {
         color: Colors.green[100],
         child: Column(
           children: [
+            //TimerSettings
             Padding(
               padding: const EdgeInsets.all(8.0),
               child: Row(
                 children: [
-                  Text('Timer pro Runde: ',
-                      style: TextStyle(
-                          fontSize: 25,
-                          color: Colors.black,
-                          fontWeight: FontWeight.bold)),
+                  Text(
+                    'Timer pro Runde: ',
+                    style: TextStyle(
+                      fontSize: 25,
+                      color: Colors.black,
+                      //fontWeight: FontWeight.bold
+                    ),
+                  ),
                   DropdownButton<int>(
                     value: timer,
                     icon: Icon(Icons.timer),
@@ -50,6 +55,47 @@ class _UsersettingsState extends State<Usersettings> {
                       });
                     },
                     items: <int>[15, 30, 45, 60]
+                        .map<DropdownMenuItem<int>>((int value) {
+                      return DropdownMenuItem<int>(
+                        value: value,
+                        child: Text(
+                          '$value',
+                          style: TextStyle(color: Colors.green[700]),
+                        ),
+                      );
+                    }).toList(),
+                  ),
+                ],
+              ),
+            ),
+            //PunkteSettings
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: Row(
+                children: [
+                  Text(
+                    'Punkte zum Sieg: ',
+                    style: TextStyle(
+                      fontSize: 25,
+                      color: Colors.black,
+                      //fontWeight: FontWeight.bold
+                    ),
+                  ),
+                  DropdownButton<int>(
+                    value: points,
+                    icon: Icon(Icons.score),
+                    iconSize: 25,
+                    elevation: 16,
+                    style: TextStyle(
+                        color: Colors.blueAccent,
+                        fontSize: 25,
+                        fontWeight: FontWeight.bold),
+                    onChanged: (int newValue) {
+                      setState(() {
+                        setNewTimer(newValue);
+                      });
+                    },
+                    items: <int>[30, 50, 100]
                         .map<DropdownMenuItem<int>>((int value) {
                       return DropdownMenuItem<int>(
                         value: value,
@@ -89,11 +135,12 @@ class _UsersettingsState extends State<Usersettings> {
                 style: TextStyle(color: Colors.green[100]),
               ),
               elevation: 8,
-              onPressed: () {
+              onPressed: () async {
                 _controller.clear();
                 if (this.question != null) {
-                  if (this.question == 'superuserfabi1902') {
-                    Lokaldb().setSuperUser();
+                  if (this.question ==
+                      await DatabaseService().getSuperUserKey()) {
+                    Lokaldb().setSuperUserKey(this.question);
                   } else {
                     bool check =
                         DatabaseService().addUserQuestion(this.question);
@@ -156,19 +203,19 @@ class _UsersettingsState extends State<Usersettings> {
     super.initState();
   }
 
-  void onLoad() {
+  void onLoad() async {
     // Check Superuser
-    Lokaldb().getSuperUser().then((bool superuser) {
-      if (superuser) {
-        setState(() {
-          this.superuser = true;
-        });
-      } else {
-        setState(() {
-          this.superuser = false;
-        });
-      }
-    });
+    if (await Lokaldb().getSuperUserKey() ==
+        await DatabaseService().getSuperUserKey()) {
+      setState(() {
+        this.superuser = true;
+      });
+    } else {
+      setState(() {
+        this.superuser = false;
+      });
+    }
+
     //Check Timer
     Lokaldb().getTimer().then((value) => this.timer = value);
   }

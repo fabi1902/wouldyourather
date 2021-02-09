@@ -20,6 +20,18 @@ class _SuperUserState extends State<SuperUser> {
       appBar: AppBar(
         backgroundColor: Colors.black,
         title: Text('Master Settings'),
+        actions: [
+          RaisedButton(
+            color: Colors.black,
+            child: Text(
+              'Alle Fragen',
+              style: TextStyle(backgroundColor: Colors.red),
+            ),
+            onPressed: () {
+              Navigator.pushNamed(context, '/superuserallQuestions');
+            },
+          )
+        ],
       ),
       body: Column(
         children: [
@@ -93,12 +105,14 @@ class UserQuestionTile extends StatelessWidget {
         tileColor: Colors.grey,
         subtitle: Text('${question.id}'),
         title: Text('${question.data()['Frage']}'),
-        onTap: () {
+        onTap: () async {
           //Frage genehmigen!
           DatabaseService()
-              .addUserQuestiontoQuestions(question.data()['Frage']);
-          DatabaseService().deleteUserQuestion(question.id);
-          msgBoxQuestionSaved(context);
+              .addUserQuestiontoQuestions(question.data()['Frage'])
+              .then((anzahlfrage) {
+            DatabaseService().deleteUserQuestion(question.id);
+            msgBoxQuestionSaved(context, anzahlfrage);
+          });
         },
         onLongPress: () {
           //Frage verwerfen
@@ -108,13 +122,14 @@ class UserQuestionTile extends StatelessWidget {
     );
   }
 
-  Future msgBoxQuestionSaved(BuildContext context) {
+  Future msgBoxQuestionSaved(BuildContext context, int anzahlfrage) {
     return showDialog(
         context: context,
         builder: (BuildContext context) {
           return AlertDialog(
             title: Text("Saved!"),
-            content: Text('Die Userfrage wurde gespeichert!'),
+            content: Text(
+                'Die Userfrage wurde gespeichert unter der Nummer:$anzahlfrage'),
             actions: <Widget>[
               FlatButton(
                   child: Text('Ok'),

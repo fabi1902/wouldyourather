@@ -3,8 +3,6 @@ import 'package:whowouldrather/models/player.dart';
 import 'package:whowouldrather/services/lokaldatabase.dart';
 import 'dart:math';
 
-import 'package:whowouldrather/services/questions.dart';
-
 class DatabaseService {
   int timersettings;
 
@@ -17,31 +15,53 @@ class DatabaseService {
       FirebaseFirestore.instance.collection('/userquestions');
 
   //Create Raum und Player
-  Future createRoom(String raumname, String player) async {
-    await roomCollection.doc(raumname).collection('Player').doc(player).set({
-      'points': 0,
-      'temppoints': 0,
-      'isHost': true,
-      'raumname': raumname,
-    });
-    await roomCollection.doc(raumname).set({
-      'currentQuestion': 0,
-      'timer': 30,
-      'gamerunning': false,
-    });
+  Future<bool> createRoom(String raumname, String player) async {
+    bool checkifRoomalreadyexists;
+    DocumentSnapshot snapshot = await roomCollection.doc(raumname).get();
+    checkifRoomalreadyexists = snapshot.exists;
+    if (checkifRoomalreadyexists == false) {
+      //Nur wenn der Raum nicht schon existiert
+      DateTime now = DateTime.now();
+      int date = now.day;
+      await roomCollection.doc(raumname).collection('Player').doc(player).set({
+        'points': 0,
+        'temppoints': 0,
+        'isHost': true,
+        'raumname': raumname,
+      });
+      await roomCollection.doc(raumname).set({
+        'currentQuestion': 0,
+        'timer': 0,
+        'gamerunning': false,
+        'createdOn': date,
+      });
+    }
+    return checkifRoomalreadyexists;
   }
 
   //Player Join Raum
   Future<bool> joinRoom(String raumname, String player) async {
     bool foundroom;
     try {
-      await roomCollection.doc(raumname).collection('Player').doc(player).set({
-        'points': 0,
-        'temppoints': 0,
-        'isHost': false,
-        'raumname': raumname,
-      });
-      foundroom = true;
+      DocumentSnapshot room = await roomCollection.doc(raumname).get();
+      if (room == null || !room.exists) {
+        //Raum existiert nicht!
+        foundroom = false;
+      } else {
+        //Raum existiert!
+        foundroom = true;
+
+        await roomCollection
+            .doc(raumname)
+            .collection('Player')
+            .doc(player)
+            .set({
+          'points': 0,
+          'temppoints': 0,
+          'isHost': false,
+          'raumname': raumname,
+        });
+      }
     } catch (e) {
       print('Der Raum wurde nicht gefunden! Error: $e');
       foundroom = false;
@@ -53,8 +73,9 @@ class DatabaseService {
     //Checken ob game schon läuft
 
     bool gamerunning = await _checkGamerunning(raumcode);
+    int firebaseTimer = await _checkFirebaseTimer(raumcode);
 
-    if (gamerunning == false) {
+    if (gamerunning == false && firebaseTimer == 0) {
       //Spiel starten!!!
 
       //Spiel als gestartet eintragen
@@ -140,22 +161,22 @@ class DatabaseService {
       //Darf nur voten wenn er noch nicht gevotet hat!
       if (hasVoted == false) {
         //get temppoints
-        int temppoints = await roomCollection
+        roomCollection
             .doc(voteTo.raumcode)
             .collection('Player')
             .doc(voteTo.name)
             .get()
             .then((value) {
-          return value.data()['temppoints'];
+          //Vote
+          roomCollection
+              .doc(voteTo.raumcode)
+              .collection('Player')
+              .doc(voteTo.name)
+              .update({
+            'points': voteTo.points + 1,
+            'temppoints': value.data()['temppoints'] + 1
+          });
         });
-
-        //Vote
-        roomCollection
-            .doc(voteTo.raumcode)
-            .collection('Player')
-            .doc(voteTo.name)
-            .update(
-                {'points': voteTo.points + 1, 'temppoints': temppoints + 1});
 
         //Mark as voted
         roomCollection
@@ -195,16 +216,24 @@ class DatabaseService {
   Future<bool> _checkGamerunning(String raumcode) async {
     bool check;
     try {
-      await roomCollection
-          .doc(raumcode)
-          .get()
-          .then((DocumentSnapshot timersnapshot) {
-        check = timersnapshot.data()['gamerunning'];
-      });
+      DocumentSnapshot snapshot = await roomCollection.doc(raumcode).get();
+      check = snapshot.data()['gamerunning'];
     } catch (e) {
       check = false;
     }
     return check;
+  }
+
+  //Check Gamerunning stauts
+  Future<int> _checkFirebaseTimer(String raumcode) async {
+    int timer;
+    try {
+      DocumentSnapshot snapshot = await roomCollection.doc(raumcode).get();
+      timer = await snapshot.data()['timer'];
+    } catch (e) {
+      timer = 1;
+    }
+    return timer;
   }
 
   //Change Boolean Gamerunning
@@ -253,36 +282,52 @@ class DatabaseService {
   }
 
   //Add UserQuestion to the real Questions
-  void addUserQuestiontoQuestions(String question) async {
-    int anzahlFragen;
-    await questionCollection.get().then((value) async {
-      anzahlFragen = value.docs.length;
-      print('Es sind so viele Fragen: $anzahlFragen');
-      anzahlFragen = anzahlFragen + 1;
-      String anzahlFragenString = anzahlFragen.toString();
-      await questionCollection.doc(anzahlFragenString).set({
-        'Frage': question,
-      });
-    });
+  Future<int> addUserQuestiontoQuestions(String question) async {
+    QuerySnapshot snapshot = await questionCollection.get();
+    int anzahlFrage;
+    int letzteFrage;
+    for (var i = 0; i <= snapshot.docs.length; i++) {
+      // try {
+      DocumentSnapshot doc = await questionCollection.doc(i.toString()).get();
+      if (doc.exists == false) {
+        anzahlFrage = i;
+        break;
+      } else {
+        //print('Die Frage exisitiert: $i');
+        letzteFrage = i;
+      }
+    }
+    if (anzahlFrage == null) {
+      anzahlFrage = letzteFrage + 1;
+    }
+    print('Neue Frage wird angelegt unter $anzahlFrage');
+    questionCollection
+        .doc(anzahlFrage.toString())
+        .set({'Frage': question, 'Kategorie': 'Basic'});
+    return anzahlFrage;
   }
 
+  //Wurde nur einmal benötigt
   void loadInallQuestions() async {
-    List<String> questionlist;
-    questionlist = Questions().questionslist;
+    // List<String> questionlist;
+    // questionlist = Questions().questionslist;
 
-    questionCollection
-        .get()
-        .then((value) => print('FirebaseAnzahl:${value.docs.length}'));
-
-    print('Lokale Anzahl:${questionlist.length}');
-
-    for (int questionID = 0; questionID <= questionlist.length; questionID++) {
-      print(questionID);
-      String questionIDString = questionID.toString();
-      await questionCollection.doc(questionIDString).set({
-        'Frage': questionlist[questionID],
+    questionCollection.get().then((value) async {
+      value.docs.forEach((element) {
+        questionCollection.doc(element.id).update({'Kategorie': 'Basic'});
+        print('Geändert: ${element.id}');
       });
-    }
+    });
+
+    //print('Lokale Anzahl:${questionlist.length}');
+
+    // for (int questionID = 0; questionID <= questionlist.length; questionID++) {
+    //   print(questionID);
+    //   String questionIDString = questionID.toString();
+    //   await questionCollection.doc(questionIDString).set({
+    //     'Frage': questionlist[questionID],
+    //   });
+    // }
   }
 
   Future<String> loadQuestionFromFirebase(String questionID) async {
@@ -291,8 +336,52 @@ class DatabaseService {
   }
 
   Future<int> _firebaseQuestionslength() async {
-    int anzahl;
-    questionCollection.get().then((value) => anzahl = value.docs.length);
-    return anzahl;
+    QuerySnapshot questionSnapshot = await questionCollection.get();
+    return questionSnapshot.docs.length;
+  }
+
+  Future<String> getSuperUserKey() async {
+    CollectionReference config =
+        FirebaseFirestore.instance.collection('/Config');
+    DocumentSnapshot snapshot = await config.doc('settings').get();
+    return snapshot.data()['superuserkey'];
+  }
+
+  void deleteOldRooms() async {
+    DateTime now = DateTime.now();
+    int date = now.day;
+    QuerySnapshot rooms = await roomCollection.get();
+    rooms.docs.forEach((room) async {
+      if (room.data()['createdOn'] != date) {
+        //Spieler löschen
+        await roomCollection
+            .doc(room.id)
+            .collection('Player')
+            .get()
+            .then((playerlist) {
+          playerlist.docs.forEach((player) {
+            roomCollection
+                .doc(room.id)
+                .collection('Player')
+                .doc(player.id)
+                .delete();
+          });
+        });
+        await roomCollection
+            .doc(room.id)
+            .collection('Votes')
+            .get()
+            .then((votelist) {
+          votelist.docs.forEach((vote) {
+            roomCollection
+                .doc(room.id)
+                .collection('Player')
+                .doc(vote.id)
+                .delete();
+          });
+        });
+        roomCollection.doc(room.id).delete();
+      }
+    });
   }
 }

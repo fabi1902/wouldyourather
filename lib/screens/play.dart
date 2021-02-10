@@ -110,7 +110,7 @@ class _PlayState extends State<Play> {
           return AlertDialog(
             title: Text("Jetzt wird getrunken!"),
             content: Text(
-                'Du wurdest ${temppoints}x gevotet. Also musst du so viele Schlücke trinken: $temppoints!'),
+                'Du wurdest ${temppoints}x gewählt. Gönn‘ dir so viele Schlucke: $temppoints'),
             actions: <Widget>[
               FlatButton(
                   child: Text('Ok'),

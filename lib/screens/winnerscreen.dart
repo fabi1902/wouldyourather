@@ -1,15 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:whowouldrather/models/player.dart';
-import 'package:whowouldrather/screens/start.dart';
 import 'package:whowouldrather/services/database.dart';
 
 class Winner extends StatelessWidget {
-  // final String winnerName;
-  // final int winningpoints;
-
-  // const Winner({Key key, this.winnerName, this.winningpoints});
-
   @override
   Widget build(BuildContext context) {
     Player spieler = ModalRoute.of(context).settings.arguments;

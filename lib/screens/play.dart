@@ -133,7 +133,7 @@ class _PlayState extends State<Play> {
         builder: (context) => AlertDialog(
           title: Text('Verlassen?'),
           content: Text(
-              'Wenn du den Raum als Host verlässt, löscht du den Raum für alle Spieler. Fortfahren?'),
+              'Wenn du den Raum als Host verlässt, löscht du den Raum für alle Spieler. Verlassen?'),
           actions: [
             FlatButton(
                 child: Text('Nein'),

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:whowouldrather/models/player.dart';
@@ -20,8 +22,15 @@ class _StartState extends State<Start> {
 
   @override
   Widget build(BuildContext context) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (await _getAlcWarning() == false) {
+        _setAlcWarning();
+        _msgBoxAcceptAlcohol(context);
+      }
+    });
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: Text('Who would rather?'),
         backgroundColor: Colors.green,
         elevation: 0.0,
@@ -208,6 +217,18 @@ class _StartState extends State<Start> {
     db.getInt('timer') ?? db.setInt('timer', 30);
   }
 
+  Future<bool> _getAlcWarning() async {
+    //Lokal User anlegen
+    SharedPreferences db = await SharedPreferences.getInstance();
+    return db.getBool('wasWarned') ?? false;
+  }
+
+  void _setAlcWarning() async {
+    //Lokal User anlegen
+    SharedPreferences db = await SharedPreferences.getInstance();
+    db.setBool('wasWarned', true);
+  }
+
   void setPoints() async {
     //Lokal User anlegen
     SharedPreferences db = await SharedPreferences.getInstance();
@@ -217,11 +238,11 @@ class _StartState extends State<Start> {
   @override
   void initState() {
     // Check Superuser
-    onLoad();
     super.initState();
+    _onLoad();
   }
 
-  void onLoad() async {
+  void _onLoad() async {
     //Set Timer
     setTimer();
     //Set Points
@@ -239,22 +260,48 @@ class _StartState extends State<Start> {
     }
   }
 
-  Future _msgBoxRoomhasHost(BuildContext context) {
-    return showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: Text("Fehler"),
-            content: Text('Dieser Raum hat bereits einen Host'),
-            actions: <Widget>[
-              FlatButton(
-                  child: Text('Okay'),
-                  onPressed: () {
-                    // Nur die MSGBox schliessen
-                    Navigator.of(context).pop();
-                  }),
-            ],
-          );
-        });
-  }
+//Class Ende
+}
+
+Future _msgBoxRoomhasHost(BuildContext context) {
+  return showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Fehler"),
+          content: Text('Dieser Raum hat bereits einen Host'),
+          actions: <Widget>[
+            FlatButton(
+                child: Text('Okay'),
+                onPressed: () {
+                  // Nur die MSGBox schliessen
+                  Navigator.of(context).pop();
+                }),
+          ],
+        );
+      });
+}
+
+Future _msgBoxAcceptAlcohol(BuildContext context) {
+  return showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Warnung!"),
+          content: Text(
+            '''Der Missbrauch von Alkohol ist gesundheitsschädigend.
+Wenn du fortfährst, bestätigst du, dass du für eventuelle Konsequenzen
+selbst verantworlich bist.''',
+            textAlign: TextAlign.start,
+          ),
+          // actions: <Widget>[
+          //   FlatButton(
+          //       child: Text('Okay'),
+          //       onPressed: () {
+          //         // Nur die MSGBox schliessen
+          //         Navigator.of(context).pop();
+          //       }),
+          // ],
+        );
+      });
 }

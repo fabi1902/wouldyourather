@@ -70,11 +70,14 @@ class Winner extends StatelessWidget {
                         child: RaisedButton.icon(
                           color: Colors.green[700],
                           onPressed: () {
-                            Navigator.pushAndRemoveUntil(
-                              context,
-                              MaterialPageRoute(builder: (context) => Start()),
-                              (Route<dynamic> route) => false,
-                            );
+                            // Navigator.pushAndRemoveUntil(
+                            //   context,
+                            //   MaterialPageRoute(builder: (context) => Start()),
+                            //   (Route<dynamic> route) => false,
+                            // );
+                            // Navigator.pushNamedAndRemoveUntil(
+                            //     context, '/start', (_) => false);
+                            Navigator.pushNamed(context, '/start');
                           },
                           icon: Icon(
                             Icons.play_arrow,

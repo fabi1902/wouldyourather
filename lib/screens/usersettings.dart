@@ -82,7 +82,7 @@ class _UsersettingsState extends State<Usersettings> {
                     ),
                   ),
                   DropdownButton<int>(
-                    value: points,
+                    value: points ?? 50,
                     icon: Icon(Icons.videogame_asset),
                     iconSize: 25,
                     elevation: 16,
@@ -95,7 +95,7 @@ class _UsersettingsState extends State<Usersettings> {
                         setNewPointstoWin(newValue);
                       });
                     },
-                    items: <int>[1, 3, 10, 30, 50, 100]
+                    items: <int>[10, 30, 50, 100]
                         .map<DropdownMenuItem<int>>((int value) {
                       return DropdownMenuItem<int>(
                         value: value,

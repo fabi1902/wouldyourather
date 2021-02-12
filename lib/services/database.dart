@@ -15,6 +15,12 @@ class DatabaseService {
       FirebaseFirestore.instance.collection('/questions');
   final CollectionReference userquestionCollection =
       FirebaseFirestore.instance.collection('/userquestions');
+  //Collection Question Query
+  Future<QuerySnapshot> _queryAllQuestions() async {
+    return questionCollection
+        .where('Kategorie', whereIn: await Lokaldb().getselectedCategoryList())
+        .get();
+  }
 
   //Create Raum und Player
   Future<bool> createRoom(String raumname, String player) async {
@@ -90,13 +96,18 @@ class DatabaseService {
         //Timer reinladen
         int timer = await _getTimer();
         //Fragerunde neu starten!
-        int anzahlFragen = await _firebaseQuestionslength();
-        int questionID = 1 + Random().nextInt(anzahlFragen - 1);
+        // int anzahlFragen = await _firebaseQuestionslength();
+        // int randInt = 1 + Random().nextInt(anzahlFragen - 1);
+        int randquestionID = await _getQueryQuestionID();
         //Setzen von neuer Frage:
-        roomCollection.doc(raumcode).update({
-          'currentQuestion': questionID,
-          'timer': timer,
-        });
+        try {
+          roomCollection.doc(raumcode).update({
+            'currentQuestion': randquestionID,
+            'timer': timer,
+          });
+        } catch (_) {
+          print('Raum wurde bereits gelöscht!');
+        }
         do {
           //Hier läuft der Timer ab
           print('Timer:$timer');
@@ -115,12 +126,16 @@ class DatabaseService {
           timer--;
         } while (timer >= 1);
         //Meiste Punkte reinladen
-        Player bestPlayer = await getMostPlayerPoints(raumcode);
-        this.bestPlayer = bestPlayer;
-        //Alle Votes wieder löschen!
-        _deleteVotes(raumcode);
-        //Temppoints wieder löschen!
-        _deletetemppoints(raumcode);
+        try {
+          Player bestPlayer = await getMostPlayerPoints(raumcode);
+          this.bestPlayer = bestPlayer;
+          //Alle Votes wieder löschen!
+          _deleteVotes(raumcode);
+          //Temppoints wieder löschen!
+          _deletetemppoints(raumcode);
+        } catch (e) {
+          print('Spiel wurde schon beendet!Fehler$e');
+        }
       } while (await _checkGamerunning(raumcode) == true &&
           this.bestPlayer.points < this.pointsToWin);
       //Spiel wieder beenden:
@@ -334,16 +349,6 @@ class DatabaseService {
         print('Geändert: ${element.id}');
       });
     });
-
-    //print('Lokale Anzahl:${questionlist.length}');
-
-    // for (int questionID = 0; questionID <= questionlist.length; questionID++) {
-    //   print(questionID);
-    //   String questionIDString = questionID.toString();
-    //   await questionCollection.doc(questionIDString).set({
-    //     'Frage': questionlist[questionID],
-    //   });
-    // }
   }
 
   Future<String> loadQuestionFromFirebase(String questionID) async {
@@ -351,9 +356,12 @@ class DatabaseService {
     return snapshot.data()['Frage'];
   }
 
-  Future<int> _firebaseQuestionslength() async {
-    QuerySnapshot questionSnapshot = await questionCollection.get();
-    return questionSnapshot.docs.length;
+  Future<int> _getQueryQuestionID() async {
+    QuerySnapshot questionSnapshot = await _queryAllQuestions();
+    int anzahlfragen = questionSnapshot.docs.length;
+    print('So viele Fragen sind im Query:$anzahlfragen');
+    int random = 1 + Random().nextInt(anzahlfragen - 1);
+    return int.parse(questionSnapshot.docs[random].id);
   }
 
   Future<String> getSuperUserKey() async {

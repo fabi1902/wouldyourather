@@ -22,3 +22,9 @@ var boxDecoration = BoxDecoration(
     )
   ],
 );
+
+var boxDecoration2 = BoxDecoration(
+  color: Colors.green,
+  border:
+      Border.all(color: Colors.green[700], width: 2, style: BorderStyle.solid),
+);

@@ -7,9 +7,9 @@
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:405250047492:android:b66bf1d63e1edebc7abf51",
+        "mobilesdk_app_id": "1:405250047492:android:68e31ca7a1d83f847abf51",
         "android_client_info": {
-          "package_name": "com.example.whowouldrather"
+          "package_name": "com.mjproductions.whowouldrather"
         }
       },
       "oauth_client": [
@@ -29,6 +29,13 @@
             {
               "client_id": "405250047492-79k532edlk8m3ckvkc87m6dca0qqjnmj.apps.googleusercontent.com",
               "client_type": 3
+            },
+            {
+              "client_id": "405250047492-quask4pu7fc1258ek81qkjghp11aid5c.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.whowouldrather"
+              }
             }
           ]
         }

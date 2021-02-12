@@ -1,6 +1,6 @@
 import 'dart:async';
-
 import 'package:flutter/material.dart';
+import 'package:flutter_spinkit/flutter_spinkit.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:whowouldrather/models/player.dart';
 import 'package:whowouldrather/services/database.dart';
@@ -19,6 +19,8 @@ class _StartState extends State<Start> {
   String raumcode = "";
   Player spieler = Player();
   final _formKey = GlobalKey<FormState>();
+  List<bool> isSelectedCategoryBool = [];
+  List<String> isSelectedCategoryString = ['Basic', 'Party', '18+', 'Psycho'];
 
   @override
   Widget build(BuildContext context) {
@@ -48,7 +50,7 @@ class _StartState extends State<Start> {
           child: Column(
             children: [
               Padding(
-                padding: const EdgeInsets.symmetric(vertical: 10),
+                padding: const EdgeInsets.symmetric(vertical: 8),
                 child: Card(
                   elevation: 8,
                   color: Colors.green[700],
@@ -69,7 +71,7 @@ class _StartState extends State<Start> {
                 ),
               ),
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 30),
+                padding: const EdgeInsets.fromLTRB(25, 0, 25, 10),
                 child: Form(
                   key: _formKey,
                   child: Column(children: [
@@ -98,92 +100,175 @@ class _StartState extends State<Start> {
                   ]),
                 ),
               ),
+              //Auswahl für Fragen:
               Padding(
-                padding: const EdgeInsets.all(10.0),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Padding(
-                      padding: const EdgeInsets.all(5),
-                      child: RaisedButton.icon(
-                        elevation: 10,
-                        color: Colors.green[700],
-                        onPressed: () async {
-                          if (_formKey.currentState.validate()) {
-                            bool checkifRoomexists = await DatabaseService()
-                                .createRoom(raumcode, name);
-                            if (checkifRoomexists) {
-                              //Nur ein Host erlaubt
-                              _msgBoxRoomhasHost(context);
-                            } else {
-                              print('Raum erfolgreich erstellt!');
-                              spieler.isHost = true;
-                              spieler.name = name;
-                              spieler.points = 0;
-                              spieler.raumcode = raumcode;
-                              Lokaldb().setPlayer(spieler);
-                              dynamic result = await Navigator.pushNamed(
-                                  context, '/play',
-                                  arguments: spieler);
-                              if (result == null && spieler.isHost) {
-                                DatabaseService().deleteRoom(raumcode);
-                              }
-                            }
-                          }
-                        },
-                        icon: Icon(Icons.add, color: Colors.green[100]),
-                        label: Padding(
-                          padding: const EdgeInsets.fromLTRB(0, 15, 0, 15),
-                          child: Text(
-                            'Raum erstellen!',
-                            style: TextStyle(color: Colors.green[100]),
-                          ),
-                        ),
-                      ),
+                padding: const EdgeInsets.fromLTRB(17, 0, 17, 0),
+                child: Container(
+                  decoration: boxDecoration2,
+                  //color: Colors.green,
+                  child: Padding(
+                    padding: const EdgeInsets.all(5.0),
+                    child: Text(
+                      'Wähle deine Kategorien aus:',
+                      style: TextStyle(fontSize: 15, color: Colors.white),
                     ),
-                    Padding(
-                      padding: const EdgeInsets.all(5),
-                      child: RaisedButton.icon(
-                        elevation: 10,
-                        color: Colors.green[700],
-                        onPressed: () async {
-                          if (_formKey.currentState.validate()) {
-                            bool check = await DatabaseService()
-                                .joinRoom(raumcode, name);
-                            if (check == true && name != null) {
-                              print('Raum erfolgreich beigetreten!');
-                              spieler.isHost = false;
-                              spieler.name = name;
-                              spieler.points = 0;
-                              spieler.raumcode = raumcode;
-                              Lokaldb().setPlayer(spieler);
-                              Navigator.pushNamed(context, '/play',
-                                  arguments: spieler);
-                            } else {
-                              //FehlerMeldung anzeigen
-                              _msgBoxRoomnotavailable(context);
-                              print('Dieser Raum existiert nicht!');
-                            }
-                          }
-                        },
-                        icon: Icon(Icons.check, color: Colors.green[100]),
-                        label: Padding(
-                          padding: const EdgeInsets.fromLTRB(0, 15, 0, 15),
-                          child: Text(
-                            'Raum beitreten!',
-                            style: TextStyle(color: Colors.green[100]),
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
+                  ),
                 ),
               ),
-              Container(
-                //color: Colors.green[200],
-                child: Image.asset('lib/assets/Wouldyourather.png',
-                    color: Colors.green[300]),
-                height: 220.0,
+              FutureBuilder(
+                  future: _loadselectedCategories(),
+                  builder: (context, result) {
+                    if (result != null) {
+                      return Padding(
+                        padding: const EdgeInsets.fromLTRB(15, 8, 15, 8),
+                        child: ToggleButtons(
+                          borderColor: Colors.green[700],
+                          selectedBorderColor: Colors.green[700],
+                          borderWidth: 2,
+                          selectedColor: Colors.white,
+                          fillColor: Colors.green,
+                          constraints:
+                              BoxConstraints(minWidth: 75, minHeight: 55),
+                          children: <Widget>[
+                            Text(
+                              'Basic',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            Text(
+                              'Party',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            Text(
+                              '18+',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                            Text(
+                              'Psycho',
+                              style: TextStyle(fontWeight: FontWeight.bold),
+                            ),
+                          ],
+                          onPressed: (int index) {
+                            int count = 0;
+                            isSelectedCategoryBool.forEach((bool val) {
+                              if (val) count++;
+                            });
+
+                            if (isSelectedCategoryBool[index] && count < 2)
+                              return;
+
+                            setState(() {
+                              isSelectedCategoryBool[index] =
+                                  !isSelectedCategoryBool[index];
+                              //Change Lokaldb Value
+                              _changeCategory(isSelectedCategoryString[index],
+                                  isSelectedCategoryBool[index]);
+                            });
+                          },
+                          isSelected: isSelectedCategoryBool,
+                        ),
+                      );
+                    } else {
+                      return Container(
+                        child: SpinKitDoubleBounce(
+                          color: Colors.white,
+                          size: 30,
+                        ),
+                      );
+                    }
+                  }),
+              Stack(
+                alignment: Alignment.topCenter,
+                overflow: Overflow.visible,
+                children: [
+                  Positioned(
+                    top: 20,
+                    child: Container(
+                      alignment: Alignment.bottomCenter,
+                      //color: Colors.green[200],
+                      child: Image.asset('lib/assets/Wouldyourather.png',
+                          color: Colors.green[300]),
+                      height: 210,
+                    ),
+                  ),
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Padding(
+                        padding: const EdgeInsets.all(5),
+                        child: RaisedButton.icon(
+                          elevation: 10,
+                          color: Colors.green[700],
+                          onPressed: () async {
+                            if (_formKey.currentState.validate()) {
+                              bool checkifRoomexists = await DatabaseService()
+                                  .createRoom(raumcode, name);
+                              if (checkifRoomexists) {
+                                //Nur ein Host erlaubt
+                                _msgBoxRoomhasHost(context);
+                              } else {
+                                print('Raum erfolgreich erstellt!');
+                                spieler.isHost = true;
+                                spieler.name = name;
+                                spieler.points = 0;
+                                spieler.raumcode = raumcode;
+                                Lokaldb().setPlayer(spieler);
+                                dynamic result = await Navigator.pushNamed(
+                                    context, '/play',
+                                    arguments: spieler);
+                                if (result == null && spieler.isHost) {
+                                  DatabaseService().deleteRoom(raumcode);
+                                }
+                              }
+                            }
+                          },
+                          icon: Icon(Icons.add, color: Colors.green[100]),
+                          label: Padding(
+                            padding: const EdgeInsets.fromLTRB(0, 15, 0, 15),
+                            child: Text(
+                              'Raum erstellen!',
+                              style: TextStyle(color: Colors.green[100]),
+                            ),
+                          ),
+                        ),
+                      ),
+                      Padding(
+                        padding: const EdgeInsets.all(5),
+                        child: RaisedButton.icon(
+                          elevation: 10,
+                          color: Colors.green[700],
+                          onPressed: () async {
+                            if (_formKey.currentState.validate()) {
+                              bool check = await DatabaseService()
+                                  .joinRoom(raumcode, name);
+                              if (check == true && name != null) {
+                                print('Raum erfolgreich beigetreten!');
+                                spieler.isHost = false;
+                                spieler.name = name;
+                                spieler.points = 0;
+                                spieler.raumcode = raumcode;
+                                Lokaldb().setPlayer(spieler);
+                                Navigator.pushNamed(context, '/play',
+                                    arguments: spieler);
+                              } else {
+                                //FehlerMeldung anzeigen
+                                _msgBoxRoomnotavailable(context);
+                                print('Dieser Raum existiert nicht!');
+                              }
+                            }
+                          },
+                          icon: Icon(Icons.check, color: Colors.green[100]),
+                          label: Padding(
+                            padding: const EdgeInsets.fromLTRB(0, 15, 0, 15),
+                            child: Text(
+                              'Raum beitreten!',
+                              style: TextStyle(color: Colors.green[100]),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
               ),
             ],
           ),
@@ -209,6 +294,23 @@ class _StartState extends State<Start> {
             ],
           );
         });
+  }
+
+  //Change Category
+  void _changeCategory(String category, bool value) {
+    print('Kategorie einstellung geändert: $category ist jetzt $value');
+    Lokaldb().changeCategory(category, value);
+  }
+
+  Future<List<bool>> _loadselectedCategories() async {
+    SharedPreferences db = await SharedPreferences.getInstance();
+    List<bool> finallist = [];
+    List<String> category = ['Basic', 'Party', '18+', 'Psycho'];
+    category.forEach((element) {
+      finallist.add(db.getBool(element));
+    });
+    this.isSelectedCategoryBool = finallist;
+    return finallist;
   }
 
   void setTimer() async {
@@ -240,6 +342,7 @@ class _StartState extends State<Start> {
     // Check Superuser
     super.initState();
     _onLoad();
+    _loadselectedCategories();
   }
 
   void _onLoad() async {

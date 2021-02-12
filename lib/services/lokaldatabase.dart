@@ -8,6 +8,36 @@ class Lokaldb {
     return db.getInt('timer') ?? 30;
   }
 
+  //GetTimer
+  void changeCategory(String category, bool value) async {
+    SharedPreferences db = await SharedPreferences.getInstance();
+    db.setBool('$category', value);
+    print(await getselectedCategoryList());
+  }
+
+  //get Category
+  Future<bool> getCategory(String category) async {
+    SharedPreferences db = await SharedPreferences.getInstance();
+    db.getBool('$category');
+  }
+
+  //Get selected Category List
+  Future<List<String>> getselectedCategoryList() async {
+    SharedPreferences db = await SharedPreferences.getInstance();
+    List<String> finallist = [];
+    List<String> category = ['Basic', 'Party', '18+', 'Psycho'];
+    category.forEach((element) {
+      if (db.getBool(element) ?? false) {
+        finallist.add(element);
+      }
+      // hier weitermachen fast fertig
+      // if (finallist.length == 0) {
+      //   finallist.add('Basic');
+      // }
+    });
+    return finallist;
+  }
+
   //SetTimer
   void setTimer(int timer) async {
     SharedPreferences db = await SharedPreferences.getInstance();

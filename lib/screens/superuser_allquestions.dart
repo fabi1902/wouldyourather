@@ -123,11 +123,15 @@ class _SuperUserAllQuestionsState extends State<SuperUserAllQuestions> {
         .where("Frage", isEqualTo: question)
         .get()
         .then((frage) {
-      DatabaseService()
-          .questionCollection
-          .doc(frage.docs.first.id)
-          .delete()
-          .then((value) => print('Question: $question deleted!'));
+      DatabaseService().questionBackupCollection.add({
+        'Frage': question,
+      }).then((value) {
+        DatabaseService()
+            .questionCollection
+            .doc(frage.docs.first.id)
+            .delete()
+            .then((value) => print('Question: $question deleted!'));
+      });
     });
   }
 

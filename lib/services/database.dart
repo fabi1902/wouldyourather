@@ -15,6 +15,8 @@ class DatabaseService {
       FirebaseFirestore.instance.collection('/questions');
   final CollectionReference userquestionCollection =
       FirebaseFirestore.instance.collection('/userquestions');
+  final CollectionReference questionBackupCollection =
+      FirebaseFirestore.instance.collection('/questionsBackup');
   //Collection Question Query
   Future<QuerySnapshot> _queryAllQuestions() async {
     return questionCollection

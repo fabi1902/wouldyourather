@@ -313,10 +313,12 @@ class DatabaseService {
   }
 
   //Add UserQuestion to the real Questions
-  Future<int> addUserQuestiontoQuestions(String question) async {
+  Future<int> addUserQuestiontoQuestions(String question,
+      [int categoryID]) async {
     QuerySnapshot snapshot = await questionCollection.get();
     int anzahlFrage;
     int letzteFrage;
+    List<String> kategorie = ['Basic', 'Party', '18+', 'Psycho'];
     for (var i = 0; i <= snapshot.docs.length; i++) {
       // try {
       DocumentSnapshot doc = await questionCollection.doc(i.toString()).get();
@@ -331,10 +333,19 @@ class DatabaseService {
     if (anzahlFrage == null) {
       anzahlFrage = letzteFrage + 1;
     }
-    print('Neue Frage wird angelegt unter $anzahlFrage');
-    questionCollection
-        .doc(anzahlFrage.toString())
-        .set({'Frage': question, 'Kategorie': 'Basic'});
+    if (categoryID != null) {
+      //Frage mit Kategorie anlegen
+      print('Neue Frage wird angelegt unter $anzahlFrage');
+      questionCollection
+          .doc(anzahlFrage.toString())
+          .set({'Frage': question, 'Kategorie': kategorie[categoryID]});
+    } else {
+      //Frage anlegen ohne Kategorie
+      print('Neue Frage wird angelegt unter $anzahlFrage');
+      questionCollection
+          .doc(anzahlFrage.toString())
+          .set({'Frage': question, 'Kategorie': 'Basic'});
+    }
     return anzahlFrage;
   }
 

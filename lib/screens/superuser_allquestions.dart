@@ -60,19 +60,23 @@ class _SuperUserAllQuestionsState extends State<SuperUserAllQuestions> {
                                 onTap: () {
                                   //Kategorie ändern!
                                   _changeCategoryinFirebase(
-                                      '${snapshot.data[index]}');
+                                      '${snapshot.data[index]['Frage']}');
                                   //_setCategoryinFirebase(
                                   //'${snapshot.data[index]}', 'NeueKategorie');
                                 },
+                                subtitle: Text(
+                                    '${snapshot.data[index]['Kategorie']}'),
                                 trailing: FlatButton(
-                                  onPressed: () {
-                                    _deleteQuestionfromFirebase(
-                                        '${snapshot.data[index]}');
+                                  onPressed: () async {
+                                    _suretodelete(
+                                        '${snapshot.data[index]['Frage']}');
+                                    //_deleteQuestionfromFirebase(
+                                    //'${snapshot.data[index]}');
                                   },
                                   child: Icon(Icons.delete),
                                 ),
                                 leading: Text('$index'),
-                                title: Text('${snapshot.data[index]}'),
+                                title: Text('${snapshot.data[index]['Frage']}'),
                               ),
                             ),
                           ),
@@ -83,14 +87,22 @@ class _SuperUserAllQuestionsState extends State<SuperUserAllQuestions> {
                 ],
               ),
             ),
+            floatingActionButton: FloatingActionButton(
+              onPressed: () {
+                _addcompleteNewQuestion();
+              },
+              backgroundColor: Colors.green[700],
+              child: Icon(Icons.add),
+              focusColor: Colors.green[900],
+            ),
           );
         }
       },
     );
   }
 
-  Future<List<String>> _getAllQuestionsfromFirebase(String textSuche) async {
-    List<String> questionlist = [];
+  Future<List<Object>> _getAllQuestionsfromFirebase(String textSuche) async {
+    List<Object> questionlist = [];
     QuerySnapshot firebaseQuestions =
         await DatabaseService().questionCollection.get();
     firebaseQuestions.docs.forEach((frage) {
@@ -98,7 +110,7 @@ class _SuperUserAllQuestionsState extends State<SuperUserAllQuestions> {
           .data()['Frage']
           .toLowerCase()
           .contains(textSuche.toLowerCase())) {
-        questionlist.add(frage.data()['Frage']);
+        questionlist.add(frage.data());
       }
     });
     //print('Es sind so viele Fragen:${questionlist.length}');
@@ -111,7 +123,11 @@ class _SuperUserAllQuestionsState extends State<SuperUserAllQuestions> {
         .where("Frage", isEqualTo: question)
         .get()
         .then((frage) {
-      DatabaseService().questionCollection.doc(frage.docs.first.id).delete();
+      DatabaseService()
+          .questionCollection
+          .doc(frage.docs.first.id)
+          .delete()
+          .then((value) => print('Question: $question deleted!'));
     });
   }
 
@@ -171,8 +187,6 @@ class _SuperUserAllQuestionsState extends State<SuperUserAllQuestions> {
         );
       },
     );
-    //print(auswahl);
-    //return auswahl;
   }
 
   Future<int> _getCategoryfromFirebase(String question) {
@@ -190,5 +204,141 @@ class _SuperUserAllQuestionsState extends State<SuperUserAllQuestions> {
         return allcategories.indexOf(value.data()['Kategorie']) ?? 0;
       });
     });
+  }
+
+  void _suretodelete(String question) {
+    showDialog<void>(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text('Warnung!'),
+            content: Text('Sicher das du die Frage löschen willst?'),
+            actions: [
+              FlatButton(
+                onPressed: () {
+                  _deleteQuestionfromFirebase(question);
+                  Navigator.of(context).pop();
+                },
+                child: Text('Ja'),
+              ),
+              FlatButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: Text('Nein'),
+              )
+            ],
+          );
+        });
+  }
+
+  void _addcompleteNewQuestion() async {
+    int selectedRadio = 0;
+    String question;
+    bool loading = false;
+    showDialog<void>(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          content: StatefulBuilder(
+            builder: (BuildContext context, StateSetter setState) {
+              return Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: Text(
+                      'Neue Frage hinzufügen:',
+                      style: TextStyle(fontSize: 20),
+                    ),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: TextFormField(
+                      maxLines: 10,
+                      decoration: textInputDecoration,
+                      onChanged: (value) {
+                        question = value;
+                      },
+                    ),
+                  ),
+                  Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text('Basic'),
+                        Text('Party'),
+                        Text('18+'),
+                        Text('Psycho'),
+                      ]),
+                  Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: List<Widget>.generate(4, (int index) {
+                      return Radio<int>(
+                        value: index,
+                        groupValue: selectedRadio,
+                        onChanged: (int value) {
+                          setState(() => selectedRadio = value);
+                          //setState(() => category = selectedRadio);
+                          print('Neue Kategorie zugewiesen: $value');
+                          //_setCategoryinFirebase(question, value);
+                        },
+                      );
+                    }),
+                  ),
+                  Row(
+                    children: [
+                      loading
+                          ? Text('')
+                          : RaisedButton.icon(
+                              color: Colors.green,
+                              onPressed: () {
+                                setState(() {
+                                  loading = true;
+                                });
+
+                                DatabaseService()
+                                    .addUserQuestiontoQuestions(
+                                        question, selectedRadio)
+                                    .then((questionID) {
+                                  Navigator.of(context).pop();
+                                  _confirmQuestionadded(questionID);
+                                });
+                              },
+                              icon: Icon(Icons.check),
+                              label: Text('Done'),
+                            ),
+                      Text(loading ? 'Bitte warten' : ''),
+                      loading
+                          ? SpinKitCircle(
+                              color: Colors.green[700],
+                            )
+                          : Text(''),
+                    ],
+                  )
+                ],
+              );
+            },
+          ),
+        );
+      },
+    );
+  }
+
+  void _confirmQuestionadded(int newQuestionID) {
+    showDialog<void>(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            content: Text(
+                'Neue Frage wurde angelegt mit der Nummer $newQuestionID. Dankeschön!'),
+            actions: [
+              FlatButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: Text('Okay'))
+            ],
+          );
+        });
   }
 }

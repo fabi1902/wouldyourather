@@ -307,7 +307,10 @@ class _StartState extends State<Start> {
     List<bool> finallist = [];
     List<String> category = ['Basic', 'Party', '18+', 'Psycho'];
     category.forEach((element) {
-      finallist.add(db.getBool(element));
+      if (db.getBool('Basic') == null) {
+        db.setBool('Basic', true);
+      }
+      finallist.add(db.getBool(element) ?? false);
     });
     this.isSelectedCategoryBool = finallist;
     return finallist;

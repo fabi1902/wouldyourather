@@ -18,7 +18,7 @@ class Lokaldb {
   //get Category
   Future<bool> getCategory(String category) async {
     SharedPreferences db = await SharedPreferences.getInstance();
-    db.getBool('$category');
+    return db.getBool('$category');
   }
 
   //Get selected Category List
@@ -30,10 +30,6 @@ class Lokaldb {
       if (db.getBool(element) ?? false) {
         finallist.add(element);
       }
-      // hier weitermachen fast fertig
-      // if (finallist.length == 0) {
-      //   finallist.add('Basic');
-      // }
     });
     return finallist;
   }

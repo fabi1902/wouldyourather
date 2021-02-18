@@ -1,9 +1,12 @@
 import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_spinkit/flutter_spinkit.dart';
+import 'package:in_app_purchase/in_app_purchase.dart';
+import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:whowouldrather/models/player.dart';
 import 'package:whowouldrather/services/database.dart';
+import 'package:whowouldrather/services/inappPurchase.dart';
 import 'package:whowouldrather/services/lokaldatabase.dart';
 import 'package:whowouldrather/shared/constants.dart';
 
@@ -21,9 +24,24 @@ class _StartState extends State<Start> {
   final _formKey = GlobalKey<FormState>();
   List<bool> isSelectedCategoryBool = [];
   List<String> isSelectedCategoryString = ['Basic', 'Party', '18+', 'Psycho'];
+  //bool _onlyAllowBasic = true;
+  bool _allowParty = false;
+  bool _allow18 = false;
+  bool _allowPsycho = false;
+
+  //InappPurchase
+
+  InAppPurchaseConnection _iap = InAppPurchaseConnection.instance;
+  void _buyProduct(ProductDetails prod) {
+    final PurchaseParam purchaseParam = PurchaseParam(productDetails: prod);
+    _iap.buyNonConsumable(purchaseParam: purchaseParam);
+  }
 
   @override
   Widget build(BuildContext context) {
+    //InappPurchase
+    final provider = Provider.of<ProviderModelInApp>(context);
+
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (await _getAlcWarning() == false) {
         _setAlcWarning();
@@ -33,7 +51,7 @@ class _StartState extends State<Start> {
     return Scaffold(
       appBar: AppBar(
         automaticallyImplyLeading: false,
-        title: Text('Who would rather?'),
+        title: Text('Spiel starten'),
         backgroundColor: Colors.green,
         elevation: 0.0,
         actions: [
@@ -60,9 +78,9 @@ class _StartState extends State<Start> {
                       padding: EdgeInsets.fromLTRB(25, 8, 25, 8),
                       color: Colors.green,
                       child: Text(
-                        'Spiel starten:',
+                        'Who would rather?',
                         style: TextStyle(
-                          fontSize: 40,
+                          fontSize: 30,
                           color: Colors.white,
                         ),
                       ),
@@ -134,20 +152,50 @@ class _StartState extends State<Start> {
                               'Basic',
                               style: TextStyle(fontWeight: FontWeight.bold),
                             ),
-                            Text(
-                              'Party',
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                            Text(
-                              '18+',
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
-                            Text(
-                              'Psycho',
-                              style: TextStyle(fontWeight: FontWeight.bold),
-                            ),
+                            _allowParty
+                                ? Text(
+                                    'Party',
+                                    style:
+                                        TextStyle(fontWeight: FontWeight.bold),
+                                  )
+                                : Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.lock),
+                                      Text('Party',
+                                          style: TextStyle(fontSize: 12))
+                                    ],
+                                  ),
+                            _allow18
+                                ? Text(
+                                    '18+',
+                                    style:
+                                        TextStyle(fontWeight: FontWeight.bold),
+                                  )
+                                : Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.lock),
+                                      Text('18+',
+                                          style: TextStyle(fontSize: 12))
+                                    ],
+                                  ),
+                            _allowPsycho
+                                ? Text(
+                                    'Psycho',
+                                    style:
+                                        TextStyle(fontWeight: FontWeight.bold),
+                                  )
+                                : Column(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.lock),
+                                      Text('Psycho',
+                                          style: TextStyle(fontSize: 12))
+                                    ],
+                                  ),
                           ],
-                          onPressed: (int index) {
+                          onPressed: (int index) async {
                             int count = 0;
                             isSelectedCategoryBool.forEach((bool val) {
                               if (val) count++;
@@ -155,6 +203,37 @@ class _StartState extends State<Start> {
 
                             if (isSelectedCategoryBool[index] && count < 2)
                               return;
+
+                            //Diesen Code für Kateogiren dann rausnehmen
+                            List<bool> catList = [
+                              true,
+                              _allowParty,
+                              _allow18,
+                              _allowPsycho
+                            ];
+                            if (catList[index] == false) {
+                              print(index);
+                              int productID = index - 1;
+                              var productDetails = await provider.getProduct(
+                                  provider.myProductList[productID]);
+                              print('ProduktID:$productID');
+                              //_rebuyAllCategory();
+                              if (provider.hasPurchased(productDetails.id) !=
+                                      null &&
+                                  provider.checkPurchase(productDetails.id)) {
+                                //Hat das schonmal gekauft!
+                                _buyCategory(index);
+                                _msgBoxthanksforbuying(context);
+                              } else {
+                                //Resetting this category
+                                _deleteCategory(index);
+                                //Neuer Kauf vom Produkt!
+                                _buyProduct(productDetails);
+                              }
+
+                              //_msgBoxCategoryNotAvailable(context, index);
+                              return;
+                            }
 
                             setState(() {
                               isSelectedCategoryBool[index] =
@@ -296,6 +375,58 @@ class _StartState extends State<Start> {
         });
   }
 
+  Future _msgBoxthanksforbuying(BuildContext context) {
+    return showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text("Vielen Dank!"),
+            content: Text(
+                'Die gewünschte Kategorie wurde freigeschaltet! Vielen Dank!'),
+            actions: <Widget>[
+              FlatButton(
+                  child: Text('Okay'),
+                  onPressed: () {
+                    // Nur die MSGBox schliessen
+                    Navigator.of(context).pop();
+                    Navigator.pushReplacementNamed(context, '/start');
+                  }),
+            ],
+          );
+        });
+  }
+
+  //Kategorie nicht verfügbar und muss gekauft werden!
+  Future _msgBoxCategoryNotAvailable(BuildContext context, int categoryID) {
+    final provider = Provider.of<ProviderModelInApp>(context);
+    return showDialog(
+        context: context,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: Text("Opppss!"),
+            content: Text(
+                'Diese Kategorie ist noch nicht verfügbar. Du kannst sie bald kaufen!'),
+            actions: <Widget>[
+              FlatButton(
+                  child: Text('Okay'),
+                  onPressed: () {
+                    // Nur die MSGBox schliessen
+                    Navigator.of(context).pop();
+                  }),
+              Visibility(
+                visible: provider.available ? true : false,
+                child: FlatButton(
+                    child: Text('Kaufen'),
+                    onPressed: () {
+                      _buyCategory(categoryID);
+                      Navigator.pushReplacementNamed(context, '/');
+                    }),
+              ),
+            ],
+          );
+        });
+  }
+
   //Change Category
   void _changeCategory(String category, bool value) {
     print('Kategorie einstellung geändert: $category ist jetzt $value');
@@ -314,6 +445,57 @@ class _StartState extends State<Start> {
     });
     this.isSelectedCategoryBool = finallist;
     return finallist;
+  }
+
+  void _hasboughtCategories() async {
+    List<String> category = ['allowParty', 'allow18', 'allowPsycho'];
+    SharedPreferences db = await SharedPreferences.getInstance();
+    try {
+      final provider = Provider.of<ProviderModelInApp>(context);
+      //Check in App Käufe
+      if (provider.hasPurchased('party_questionpack') != null) {
+        db.setBool(category[0], true);
+      }
+      if (provider.hasPurchased('18plus_questionpack') != null) {
+        db.setBool(category[1], true);
+      }
+      if (provider.hasPurchased('psycho_questionpack') != null) {
+        db.setBool(category[2], true);
+      }
+    } catch (e) {
+      print('Error on Loading Categories: $e');
+    }
+
+    this._allowParty = db.getBool(category[0]) ?? false;
+    this._allow18 = db.getBool(category[1]) ?? false;
+    this._allowPsycho = db.getBool(category[2]) ?? false;
+  }
+
+  void _buyCategory(int categoryID) async {
+    //Basic ausschließen (categoryID ist 1,2 oder 3)
+    if (categoryID != 0) {
+      SharedPreferences db = await SharedPreferences.getInstance();
+      List<String> category = ['Basic', 'allowParty', 'allow18', 'allowPsycho'];
+      db.setBool(category[categoryID], true);
+    }
+  }
+
+  void _deleteCategory(int categoryID) async {
+    //Basic ausschließen (categoryID ist 1,2 oder 3)
+    if (categoryID != 0) {
+      SharedPreferences db = await SharedPreferences.getInstance();
+      List<String> category = ['Basic', 'allowParty', 'allow18', 'allowPsycho'];
+      db.setBool(category[categoryID], false);
+    }
+  }
+
+  void _rebuyAllCategory() async {
+    //Basic ausschließen
+    SharedPreferences db = await SharedPreferences.getInstance();
+    List<String> category = ['allowParty', 'allow18', 'allowPsycho'];
+    db.setBool(category[0], false);
+    db.setBool(category[1], false);
+    db.setBool(category[2], false);
   }
 
   void setTimer() async {
@@ -342,13 +524,26 @@ class _StartState extends State<Start> {
 
   @override
   void initState() {
+    //Check In app Purchases
+    var provider = Provider.of<ProviderModelInApp>(context, listen: false);
+    provider.initialize();
     // Check Superuser
     super.initState();
     _onLoad();
     _loadselectedCategories();
+    //_rebuyAllCategory();
+  }
+
+  @override
+  void dispose() {
+    var provider = Provider.of<ProviderModelInApp>(context, listen: false);
+    provider.subscription.cancel();
+    super.dispose();
   }
 
   void _onLoad() async {
+    //Check gekaufte Kategorien
+    _hasboughtCategories();
     //Set Timer
     setTimer();
     //Set Points

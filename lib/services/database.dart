@@ -98,8 +98,6 @@ class DatabaseService {
         //Timer reinladen
         int timer = await _getTimer();
         //Fragerunde neu starten!
-        // int anzahlFragen = await _firebaseQuestionslength();
-        // int randInt = 1 + Random().nextInt(anzahlFragen - 1);
         int randquestionID = await _getQueryQuestionID();
         //Setzen von neuer Frage:
         try {
@@ -123,7 +121,6 @@ class DatabaseService {
             print('Spiel wurde abgebrochen!');
             timer = 0;
           }
-
           //Timer minus 1
           timer--;
         } while (timer >= 1);
@@ -131,12 +128,14 @@ class DatabaseService {
         try {
           Player bestPlayer = await getMostPlayerPoints(raumcode);
           this.bestPlayer = bestPlayer;
+          //Eine Sekunde warten
+          await Future.delayed(Duration(milliseconds: 500));
           //Alle Votes wieder löschen!
           _deleteVotes(raumcode);
           //Temppoints wieder löschen!
           _deletetemppoints(raumcode);
         } catch (e) {
-          print('Spiel wurde schon beendet!Fehler$e');
+          print('Spiel wurde schon beendet!Fehler:$e');
         }
       } while (await _checkGamerunning(raumcode) == true &&
           this.bestPlayer.points < this.pointsToWin);

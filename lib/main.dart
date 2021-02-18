@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
+import 'package:in_app_purchase/in_app_purchase.dart';
 import 'package:page_transition/page_transition.dart';
+import 'package:provider/provider.dart';
 import 'package:whowouldrather/screens/play.dart';
 import 'package:whowouldrather/screens/start.dart';
 import 'package:firebase_core/firebase_core.dart';
@@ -7,13 +9,17 @@ import 'package:whowouldrather/screens/startloading.dart';
 import 'package:whowouldrather/screens/superuser_allquestions.dart';
 import 'package:whowouldrather/screens/usersettings.dart';
 import 'package:whowouldrather/screens/winnerscreen.dart';
+import 'package:whowouldrather/services/inappPurchase.dart';
 
 import 'screens/superuser.dart';
 
 void main() async {
+  InAppPurchaseConnection.enablePendingPurchases();
+
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
-  runApp(MyApp());
+  runApp(ChangeNotifierProvider(
+      create: (context) => ProviderModelInApp(), child: MyApp()));
 }
 
 class MyApp extends StatelessWidget {

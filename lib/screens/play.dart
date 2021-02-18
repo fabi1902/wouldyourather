@@ -18,6 +18,7 @@ class _PlayState extends State<Play> {
   DatabaseService dbs = DatabaseService();
 
   int pointstoWin;
+  int storedtemppoints;
 
   @override
   Widget build(BuildContext context) {
@@ -31,11 +32,15 @@ class _PlayState extends State<Play> {
               snapshot.data['currentQuestion'] != 0) {
             _getTemppointsFromFirebase(spieler.raumcode, spieler.name)
                 .then((temppoints) {
+              if (temppoints == 0) {
+                temppoints = storedtemppoints;
+              }
               return WidgetsBinding.instance.addPostFrameCallback(
                   (_) => _showTemppoints(context, temppoints));
             });
-
-            //_showTemppoints(context);
+          } else {
+            _getTemppointsFromFirebase(spieler.raumcode, spieler.name)
+                .then((temppoints) => storedtemppoints = temppoints);
           }
           return StreamProvider<List<Player>>.value(
             value: PlayerList(raumcode: spieler.raumcode).userlist,

@@ -80,6 +80,16 @@ class Lokaldb {
     return db.getString('superuserKey') ?? "";
   }
 
+  void setUnlockAllKey(String unlockallkey) async {
+    SharedPreferences db = await SharedPreferences.getInstance();
+    db.setString('unlockallkey', unlockallkey);
+  }
+
+  Future<String> getUnlockAllKey() async {
+    SharedPreferences db = await SharedPreferences.getInstance();
+    return db.getString('unlockallkey') ?? "";
+  }
+
   void setPlayer(Player player) async {
     SharedPreferences db = await SharedPreferences.getInstance();
     db.setString('name', player.name);

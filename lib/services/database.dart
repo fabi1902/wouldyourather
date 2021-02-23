@@ -129,7 +129,7 @@ class DatabaseService {
           Player bestPlayer = await getMostPlayerPoints(raumcode);
           this.bestPlayer = bestPlayer;
           //Eine Sekunde warten
-          await Future.delayed(Duration(milliseconds: 500));
+          await Future.delayed(Duration(seconds: 3));
           //Alle Votes wieder löschen!
           _deleteVotes(raumcode);
           //Temppoints wieder löschen!
@@ -381,6 +381,13 @@ class DatabaseService {
         FirebaseFirestore.instance.collection('/Config');
     DocumentSnapshot snapshot = await config.doc('settings').get();
     return snapshot.data()['superuserkey'];
+  }
+
+  Future<String> getUnlockAllKey() async {
+    CollectionReference config =
+        FirebaseFirestore.instance.collection('/Config');
+    DocumentSnapshot snapshot = await config.doc('settings').get();
+    return snapshot.data()['unlockallkey'];
   }
 
   void deleteOldRooms() async {

@@ -19,8 +19,6 @@ class Winner extends StatelessWidget {
                 child: Padding(
                   padding: const EdgeInsets.fromLTRB(35, 20, 35, 0),
                   child: Column(
-                    //mainAxisAlignment: MainAxisAlignment.center,
-                    //mainAxisSize: MainAxisSize.min,
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Container(
@@ -64,13 +62,6 @@ class Winner extends StatelessWidget {
                         child: RaisedButton.icon(
                           color: Colors.green[700],
                           onPressed: () {
-                            // Navigator.pushAndRemoveUntil(
-                            //   context,
-                            //   MaterialPageRoute(builder: (context) => Start()),
-                            //   (Route<dynamic> route) => false,
-                            // );
-                            // Navigator.pushNamedAndRemoveUntil(
-                            //     context, '/start', (_) => false);
                             Navigator.pushNamed(context, '/start');
                           },
                           icon: Icon(
@@ -104,5 +95,13 @@ class Winner extends StatelessWidget {
         }
       },
     );
+  }
+
+  void _deleteOldRoom(String raumcode) {
+    try {
+      DatabaseService().roomCollection.doc(raumcode).delete();
+    } catch (_) {
+      print('Raum wurde bereits gelöscht!');
+    }
   }
 }

@@ -142,10 +142,15 @@ class _UsersettingsState extends State<Usersettings> {
                       await DatabaseService().getSuperUserKey()) {
                     Lokaldb().setSuperUserKey(this.question);
                   } else {
-                    bool check =
-                        DatabaseService().addUserQuestion(this.question);
-                    if (check) {
-                      return msgBoxThxForQuestion(context);
+                    if (this.question ==
+                        await DatabaseService().getUnlockAllKey()) {
+                      Lokaldb().setUnlockAllKey(this.question);
+                    } else {
+                      bool check =
+                          DatabaseService().addUserQuestion(this.question);
+                      if (check) {
+                        return msgBoxThxForQuestion(context);
+                      }
                     }
                   }
                 }

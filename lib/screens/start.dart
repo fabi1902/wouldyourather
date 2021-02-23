@@ -204,7 +204,7 @@ class _StartState extends State<Start> {
                             if (isSelectedCategoryBool[index] && count < 2)
                               return;
 
-                            //Diesen Code für Kateogiren dann rausnehmen
+                            //Code für Kategorien
                             List<bool> catList = [
                               true,
                               _allowParty,
@@ -212,6 +212,14 @@ class _StartState extends State<Start> {
                               _allowPsycho
                             ];
                             if (catList[index] == false) {
+                              //Check for UnlockAllKey
+                              if (await Lokaldb().getUnlockAllKey() ==
+                                  await DatabaseService().getUnlockAllKey()) {
+                                _buyCategory(index);
+                                Navigator.pushReplacementNamed(
+                                    context, '/start');
+                                return;
+                              }
                               print(index);
                               int productID = index - 1;
                               var productDetails = await provider.getProduct(
@@ -234,7 +242,17 @@ class _StartState extends State<Start> {
                               //_msgBoxCategoryNotAvailable(context, index);
                               return;
                             }
-
+                            int productID = index - 1;
+                            if (provider.hasPurchased(
+                                        provider.myProductList[productID]) ==
+                                    null &&
+                                await Lokaldb().getUnlockAllKey() !=
+                                    await DatabaseService().getUnlockAllKey()) {
+                              setState(() {
+                                _deleteCategory(index);
+                              });
+                              return;
+                            }
                             setState(() {
                               isSelectedCategoryBool[index] =
                                   !isSelectedCategoryBool[index];
@@ -382,7 +400,7 @@ class _StartState extends State<Start> {
           return AlertDialog(
             title: Text("Vielen Dank!"),
             content: Text(
-                'Die gewünschte Kategorie wurde freigeschaltet! Vielen Dank!'),
+                'Die gewünschte Kategorie wurde freigeschaltet! Es kommen stetig neue Fragen dazu! Vielen Dank!'),
             actions: <Widget>[
               FlatButton(
                   child: Text('Okay'),
@@ -542,8 +560,6 @@ class _StartState extends State<Start> {
   }
 
   void _onLoad() async {
-    //Check gekaufte Kategorien
-    _hasboughtCategories();
     //Set Timer
     setTimer();
     //Set Points
@@ -559,6 +575,21 @@ class _StartState extends State<Start> {
         this.superuser = false;
       });
     }
+    // Check UnlockAll
+    // if (await Lokaldb().getUnlockAllKey() ==
+    //     await DatabaseService().getUnlockAllKey()) {
+    //   setState(() {
+    //     _buyCategory(1);
+    //     _buyCategory(2);
+    //     _buyCategory(3);
+    //   });
+    // } else {
+    //   _deleteCategory(1);
+    //   _deleteCategory(2);
+    //   _deleteCategory(3);
+    // }
+    //Check gekaufte Kategorien
+    _hasboughtCategories();
   }
 
 //Class Ende

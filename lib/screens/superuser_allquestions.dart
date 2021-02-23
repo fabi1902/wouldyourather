@@ -47,6 +47,46 @@ class _SuperUserAllQuestionsState extends State<SuperUserAllQuestions> {
                       },
                     ),
                   ),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 4),
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        FutureBuilder(
+                          future: _getCategorieCountlength('Basic'),
+                          builder: (context, len) {
+                            return Container(
+                                color: Colors.green,
+                                child: Text('Basic: ${len.data}'));
+                          },
+                        ),
+                        FutureBuilder(
+                          future: _getCategorieCountlength('Party'),
+                          builder: (context, len) {
+                            return Container(
+                                color: Colors.green,
+                                child: Text('Party: ${len.data}'));
+                          },
+                        ),
+                        FutureBuilder(
+                          future: _getCategorieCountlength('18'),
+                          builder: (context, len) {
+                            return Container(
+                                color: Colors.green,
+                                child: Text('18+: ${len.data}'));
+                          },
+                        ),
+                        FutureBuilder(
+                          future: _getCategorieCountlength('Psycho'),
+                          builder: (context, len) {
+                            return Container(
+                                color: Colors.green,
+                                child: Text('Psycho: ${len.data}'));
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
                   Expanded(
                     child: ListView.builder(
                       itemCount: snapshot.data.length,
@@ -99,6 +139,22 @@ class _SuperUserAllQuestionsState extends State<SuperUserAllQuestions> {
         }
       },
     );
+  }
+
+  Future<int> _getCategorieCountlength(String category) async {
+    int i = 0;
+    QuerySnapshot firebaseQuestions =
+        await DatabaseService().questionCollection.get();
+    firebaseQuestions.docs.forEach((frage) {
+      if (frage
+          .data()['Kategorie']
+          .toLowerCase()
+          .contains(category.toLowerCase())) {
+        i++;
+      }
+    });
+    //print('Es sind so viele Fragen:${questionlist.length}');
+    return i;
   }
 
   Future<List<Object>> _getAllQuestionsfromFirebase(String textSuche) async {

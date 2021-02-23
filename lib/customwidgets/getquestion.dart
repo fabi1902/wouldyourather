@@ -35,7 +35,6 @@ class CurrentQuestion extends StatelessWidget {
                 .doc(snapshotraum.data['currentQuestion'].toString())
                 .snapshots(),
             builder: (context, snapshotquestion) {
-              print('QuestionID: $questionID');
               if (snapshotraum.data['currentQuestion'] != 0) {
                 return FutureBuilder<Player>(
                     future: DatabaseService().getMostPlayerPoints(raumcode),
@@ -43,11 +42,6 @@ class CurrentQuestion extends StatelessWidget {
                       //
                       if (snapshotPlayer.data.points >= this.pointstoWin &&
                           snapshotraum.data['timer'] == 0) {
-                        //winningPlayer.name = snapshotPlayer.data.name;
-                        //winningPlayer.points = snapshotPlayer.data.points;
-                        //WidgetsBinding.instance.addPostFrameCallback((_) =>
-                        // _showEndGame(context, snapshotPlayer.data.name,
-                        //     snapshotPlayer.data.points));
                         SchedulerBinding.instance.addPostFrameCallback((_) {
                           Navigator.pushNamed(context, '/winner',
                               arguments: winningPlayer);
@@ -141,26 +135,6 @@ class CurrentQuestion extends StatelessWidget {
       },
     );
   }
-
-  // Future<dynamic> _showEndGame(BuildContext context, name, points) {
-  //   return showDialog(
-  //       context: context,
-  //       builder: (BuildContext context) {
-  //         return AlertDialog(
-  //           title: Text("Das Spiel ist zu Ende!"),
-  //           content: Text(
-  //               'Das Spiel ist zu Ende. Der Spieler $name hat mit $points gewonnen und darf sein Glas austrinken!'),
-  //           actions: <Widget>[
-  //             FlatButton(
-  //                 child: Text('Ok'),
-  //                 onPressed: () {
-  //                   // Nur die MSGBox schliessen
-  //                   Navigator.of(context).pop();
-  //                 }),
-  //           ],
-  //         );
-  //       });
-  // }
 }
 
 class NoRoomFoundWidget extends StatelessWidget {

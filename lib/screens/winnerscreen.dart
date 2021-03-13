@@ -62,6 +62,7 @@ class Winner extends StatelessWidget {
                         child: RaisedButton.icon(
                           color: Colors.green[700],
                           onPressed: () {
+                            _deleteOldRoom(spieler.raumcode);
                             Navigator.pushNamed(context, '/start');
                           },
                           icon: Icon(
